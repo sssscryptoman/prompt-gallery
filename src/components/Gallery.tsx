@@ -1,6 +1,6 @@
 "use client";
+import React, { useMemo, useState, useCallback, useEffect } from "react";
 import prompts from "@/data/prompts.json";
-import { useMemo, useState } from "react";
 
 interface PromptItem {
   id: string;
@@ -21,6 +21,8 @@ function allCategories(prompts: PromptItem[]) {
 
 export default function Gallery() {
   const [category, setCategory] = useState<string | null>(null);
+  const [modalItem, setModalItem] = useState<PromptItem | null>(null);
+  const [showModal, setShowModal] = useState(false);
   const categories = useMemo(() => allCategories(prompts), []);
 
   const filtered = useMemo(() => {
@@ -28,6 +30,35 @@ export default function Gallery() {
       return !category || item.category === category;
     });
   }, [category]);
+
+  // Close modal with ESC key
+  useEffect(() => {
+    if (!showModal) return;
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setShowModal(false);
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [showModal]);
+
+  // Modal Copy to Clipboard
+  const handleCopy = useCallback((text:string) => {
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(text);
+    } else {
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+    }
+  }, []);
+
+  // Click overlay closes modal
+  const overlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.target === e.currentTarget) setShowModal(false);
+  };
 
   return (
     <>
@@ -39,7 +70,9 @@ export default function Gallery() {
       </div>
       <div className="gallery-grid">
         {filtered.map(item => (
-          <div className="card" key={item.id} tabIndex={0}>
+          <div className="card" key={item.id} tabIndex={0}
+            onClick={() => { setModalItem(item); setShowModal(true); }}
+          >
             <img src={item.imageUrl} alt="prompt artwork" className="card-image" loading="lazy" />
             <div className="card-details">
               <div style={{fontWeight:700,marginBottom:4}}>{item.category}</div>
@@ -51,6 +84,22 @@ export default function Gallery() {
           </div>
         ))}
       </div>
+
+      {/* Modal Overlay */}
+      {showModal && modalItem && (
+        <div className="modal-overlay open" onClick={overlayClick}>
+          <div className="modal-content">
+            <button className="modal-close-btn" aria-label="Close" onClick={() => setShowModal(false)}>×</button>
+            <img src={modalItem.imageUrl} className="modal-image" alt="拡大画像" />
+            <div className="modal-category">{modalItem.category}</div>
+            <div className="modal-prompt" style={{position:'relative'}}>
+              <button className="copy-btn" onClick={()=>handleCopy(modalItem.prompt)}>コピー</button>
+              {modalItem.prompt}
+            </div>
+            <a href={modalItem.twitterUrl} target="_blank" rel="noopener noreferrer" className="tag" style={{alignSelf:'flex-start',marginBottom:8}}>元のX投稿を見る</a>
+          </div>
+        </div>
+      )}
     </>
   );
 }
