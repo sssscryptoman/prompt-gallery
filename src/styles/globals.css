@@ -1,10 +1,225 @@
-/* 追加: X埋め込みツイート用表示崩れ防止 */
+html {
+  color-scheme: dark;
+}
+
+body {
+  background: #191924;
+  color: #f3f3f7;
+  font-family: 'Roboto', 'Helvetica Neue', Arial, 'Liberation Sans', sans-serif;
+  margin: 0;
+  min-height: 100vh;
+}
+a {
+  color: #6fe3ff;
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+.main-title {
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 2rem 0 1rem 0;
+  text-align: center;
+}
+
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: center;
+  margin-bottom: 2rem;
+}
+
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 2rem;
+  padding: 2rem;
+  max-width: 1400px;
+  margin: 0 auto 3rem auto;
+}
+
+.card {
+  background: #24243a;
+  border-radius: 16px;
+  overflow: hidden;
+  position: relative;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.44);
+  transition: transform 0.18s cubic-bezier(.4,2,.6,1), box-shadow 0.2s;
+  cursor: pointer;
+}
+.card:hover {
+  transform: translateY(-8px) scale(1.02) rotate(-1deg);
+  box-shadow: 0 8px 32px 0 rgba(0,0,0,0.7);
+}
+.card-image {
+  width: 100%;
+  aspect-ratio: 2/3;
+  object-fit: cover;
+  display: block;
+}
+.card-details {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(180deg, #191924cc 60%, #24243add 95%);
+  color: #f3f3f7;
+  opacity: 0;
+  padding: 1.2rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 1rem;
+  font-size: 1rem;
+  line-height: 1.5;
+  transition: opacity 0.28s cubic-bezier(.4,1.8,.6,1);
+  z-index: 2;
+}
+.card:hover .card-details,
+.card:focus-within .card-details {
+  opacity: 1;
+}
+.tag {
+  background: #6fe3ff22;
+  color: #6fe3ff;
+  border-radius: 6px;
+  padding: 0.2em 0.6em;
+  font-size: 0.92em;
+  margin-top: 0.25em;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+}
+.tag.selected {
+  background: #6fe3ff44;
+  color: #fff;
+}
+.card-footer {
+  margin-top: 0.7em;
+}
+
+/* Modal */
+.modal-overlay {
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(18, 18, 24, 0.88);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: modalFadeIn 0.32s ease;
+}
+@keyframes modalFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.modal-content {
+  background: #232335;
+  border-radius: 12px;
+  box-shadow: 0 8px 40px 0 rgba(0,0,0,0.8);
+  padding: 2.4rem 2rem 1.5rem 2rem;
+  max-width: 800px;
+  width: 95vw;
+  max-height: 92vh;
+  overflow-y: auto;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  animation: modalContentIn 0.23s ease;
+}
+@keyframes modalContentIn {
+  from { transform: scale(0.94) translateY(32px); opacity: 0.6; }
+  to   { transform: scale(1) translateY(0); opacity: 1; }
+}
+.modal-image {
+  width: 100%;
+  max-height: 45vh;
+  object-fit: contain;
+  border-radius: 6px;
+  margin-bottom: 1.4rem;
+  background: #222228;
+  box-shadow: 0 2px 14px rgba(0,0,0,0.6);
+}
+.modal-category {
+  color: #6fe3ff;
+  font-weight: 700;
+  font-size: 1.06em;
+  margin-bottom: 0.7em;
+}
+.modal-prompt {
+  background: #1a1a2a;
+  padding: 1em;
+  border-radius: 8px;
+  font-size: 1em;
+  word-break: break-word;
+  position: relative;
+  margin-bottom: 1.2em;
+  color: #f3f3f7;
+}
+.copy-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  font-size: 0.92em;
+  padding: 0.2em 0.6em;
+  background: #292950;
+  color: #6fe3ff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 0.18s;
+}
+.copy-btn:hover {
+  background: #465ed8;
+  color: #fff;
+}
+.modal-close-btn {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  width: 38px;
+  height: 38px;
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 2rem;
+  opacity: 0.8;
+  cursor: pointer;
+  transition: opacity 0.16s;
+  z-index: 2;
+}
+.modal-close-btn:hover {
+  opacity: 1;
+}
+
+/* X embed */
 .twitter-tweet {
   margin-left: auto !important;
   margin-right: auto !important;
   width: 100% !important;
   max-width: 510px !important;
 }
-@media (max-width:650px){
+
+@media screen and (max-width: 650px) {
+  .main-title {
+    font-size: 1.2rem;
+    margin-top: 1rem;
+  }
+  .gallery-grid {
+    gap: 1.4rem;
+    padding: 1rem;
+  }
+  .filter-bar {
+    gap: 0.4rem;
+    margin-bottom: 1rem;
+  }
+  .modal-content { padding: 1.2rem 0.4rem 1rem 0.4rem; }
+  .modal-image { max-height: 34vh; }
   .twitter-tweet { max-width: 100% !important; }
 }
