@@ -1,6 +1,7 @@
 "use client";
-import React, { useMemo, useState, useCallback, useEffect } from "react";
+import React, { useMemo, useState, useCallback, useEffect, useRef } from "react";
 import prompts from "@/data/prompts.json";
+import Script from "next/script";
 
 interface PromptItem {
   id: string;
@@ -9,6 +10,12 @@ interface PromptItem {
   category: string;
   tags: string[];
   twitterUrl: string;
+}
+
+declare global {
+  interface Window {
+    twttr?: any;
+  }
 }
 
 function allCategories(prompts: PromptItem[]) {
@@ -24,6 +31,8 @@ export default function Gallery() {
   const [modalItem, setModalItem] = useState<PromptItem | null>(null);
   const [showModal, setShowModal] = useState(false);
   const categories = useMemo(() => allCategories(prompts), []);
+  const twitterEmbedRef = useRef<HTMLDivElement>(null);
+  const [widgetsLoaded, setWidgetsLoaded] = useState(false);
 
   const filtered = useMemo(() => {
     return prompts.filter((item) => {
@@ -60,8 +69,51 @@ export default function Gallery() {
     if (e.target === e.currentTarget) setShowModal(false);
   };
 
+  // Twitter widgets.js loaded
+  useEffect(() => {
+    if (window.twttr && window.twttr.widgets) {
+      setWidgetsLoaded(true);
+    } else {
+      window.addEventListener("twttrLoaded", () => setWidgetsLoaded(true));
+    }
+  }, []);
+
+  // Render Twitter embed when modal opens
+  useEffect(() => {
+    if (showModal && modalItem && twitterEmbedRef.current) {
+      twitterEmbedRef.current.innerHTML = '';
+      const blockquote = document.createElement("blockquote");
+      blockquote.className = "twitter-tweet";
+      const a = document.createElement("a");
+      a.href = modalItem.twitterUrl;
+      blockquote.appendChild(a);
+      twitterEmbedRef.current.appendChild(blockquote);
+      // Wait for widgets.js
+      function renderWidget() {
+        if (window.twttr && window.twttr.widgets && window.twttr.widgets.load) {
+          window.twttr.widgets.load(twitterEmbedRef.current);
+        } else {
+          setTimeout(renderWidget, 120);
+        }
+      }
+      renderWidget();
+    }
+  }, [showModal, modalItem]);
+
   return (
     <>
+      {/* Twitter widgets.js */}
+      <Script
+        src="https://platform.twitter.com/widgets.js"
+        strategy="afterInteractive"
+        onLoad={() => {
+          if (typeof window !== "undefined" && window.twttr && window.twttr.widgets) {
+            setWidgetsLoaded(true);
+            // Maybe custom event for fallback listener
+            window.dispatchEvent(new Event("twttrLoaded"));
+          }
+        }}
+      />
       <div className="filter-bar">
         <button onClick={() => setCategory(null)} className={category===null ? "tag selected" : "tag"}>すべて</button>
         {categories.map((cat) => (
@@ -90,13 +142,13 @@ export default function Gallery() {
         <div className="modal-overlay open" onClick={overlayClick}>
           <div className="modal-content">
             <button className="modal-close-btn" aria-label="Close" onClick={() => setShowModal(false)}>×</button>
-            <img src={modalItem.imageUrl} className="modal-image" alt="拡大画像" />
             <div className="modal-category">{modalItem.category}</div>
             <div className="modal-prompt" style={{position:'relative'}}>
               <button className="copy-btn" onClick={()=>handleCopy(modalItem.prompt)}>コピー</button>
               {modalItem.prompt}
             </div>
-            <a href={modalItem.twitterUrl} target="_blank" rel="noopener noreferrer" className="tag" style={{alignSelf:'flex-start',marginBottom:8}}>元のX投稿を見る</a>
+            {/* X埋め込みツイート表示 */}
+            <div ref={twitterEmbedRef} style={{margin:'14px 0', minHeight:140}}/>
           </div>
         </div>
       )}
