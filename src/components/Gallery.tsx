@@ -11,45 +11,30 @@ interface PromptItem {
   twitterUrl: string;
 }
 
-function allCategoriesAndTags(prompts: PromptItem[]) {
+function allCategories(prompts: PromptItem[]) {
   const categories = new Set<string>();
-  const tags = new Set<string>();
   prompts.forEach((item: PromptItem) => {
     categories.add(item.category);
-    item.tags.forEach((t: string) => tags.add(t));
   });
-  return {
-    categories: Array.from(categories),
-    tags: Array.from(tags)
-  };
+  return Array.from(categories);
 }
 
 export default function Gallery() {
-  // filtering
   const [category, setCategory] = useState<string | null>(null);
-  const [tag, setTag] = useState<string | null>(null);
-  const { categories, tags } = useMemo(() => allCategoriesAndTags(prompts), []);
+  const categories = useMemo(() => allCategories(prompts), []);
 
   const filtered = useMemo(() => {
     return prompts.filter((item) => {
-      return (
-        (!category || item.category === category) &&
-        (!tag || item.tags.includes(tag))
-      );
+      return !category || item.category === category;
     });
-  }, [category, tag]);
+  }, [category]);
 
   return (
     <>
       <div className="filter-bar">
-        <button onClick={() => setCategory(null)} className={category===null ? "tag selected" : "tag"}>全カテゴリ</button>
+        <button onClick={() => setCategory(null)} className={category===null ? "tag selected" : "tag"}>すべて</button>
         {categories.map((cat) => (
           <button onClick={() => setCategory(cat)} key={cat} className={category===cat ? "tag selected" : "tag"}>{cat}</button>
-        ))}
-        <span style={{ marginLeft: '1.2em' }} />
-        <button onClick={() => setTag(null)} className={tag===null ? "tag selected" : "tag"}>全タグ</button>
-        {tags.map((tg) => (
-          <button onClick={() => setTag(tg)} key={tg} className={tag===tg ? "tag selected" : "tag"}>{tg}</button>
         ))}
       </div>
       <div className="gallery-grid">
@@ -59,11 +44,6 @@ export default function Gallery() {
             <div className="card-details">
               <div style={{fontWeight:700,marginBottom:4}}>{item.category}</div>
               <div>{item.prompt}</div>
-              <div className="tags">
-                {item.tags.map((tg) => (
-                  <span className="tag" key={tg}>{tg}</span>
-                ))}
-              </div>
               <div className="card-footer">
                 <a href={item.twitterUrl} target="_blank" rel="noopener noreferrer">元X（Twitter）投稿へ</a>
               </div>

@@ -3,56 +3,56 @@
     "id": "1",
     "imageUrl": "https://via.placeholder.com/600x800?text=Art+1",
     "prompt": "A surreal landscape with floating islands and pink clouds, ultra-detailed, 8K.",
-    "category": "Surrealism",
-    "tags": ["fantasy", "clouds", "islands"],
+    "category": "風景",
+    "tags": [],
     "twitterUrl": "https://twitter.com/example1/status/1234567890"
   },
   {
     "id": "2",
     "imageUrl": "https://via.placeholder.com/600x900?text=Art+2",
     "prompt": "Cyberpunk city at night, rain-soaked streets, vivid neon lights, cinematic.",
-    "category": "Cyberpunk",
-    "tags": ["city", "night", "neon"],
+    "category": "アート",
+    "tags": [],
     "twitterUrl": "https://twitter.com/example2/status/1234567891"
   },
   {
     "id": "3",
     "imageUrl": "https://via.placeholder.com/700x900?text=Art+3",
     "prompt": "A majestic white tiger in a snowy forest, photorealistic.",
-    "category": "Animals",
-    "tags": ["tiger", "snow", "photorealistic"],
+    "category": "ポートレート",
+    "tags": [],
     "twitterUrl": "https://twitter.com/example3/status/1234567892"
   },
   {
     "id": "4",
     "imageUrl": "https://via.placeholder.com/600x900?text=Art+4",
     "prompt": "Abstract shapes in motion, vibrant colors, dynamic composition.",
-    "category": "Abstract",
-    "tags": ["abstract", "vibrant", "motion"],
+    "category": "アート",
+    "tags": [],
     "twitterUrl": "https://twitter.com/example4/status/1234567893"
   },
   {
     "id": "5",
     "imageUrl": "https://via.placeholder.com/800x600?text=Art+5",
     "prompt": "Classical oil painting of a renaissance woman, soft lighting, realistic detail.",
-    "category": "Portrait",
-    "tags": ["renaissance", "woman", "classic"],
+    "category": "ポートレート",
+    "tags": [],
     "twitterUrl": "https://twitter.com/example5/status/1234567894"
   },
   {
     "id": "6",
     "imageUrl": "https://via.placeholder.com/700x700?text=Art+6",
     "prompt": "Space exploration scene with vibrant planets and stardust, digital art.",
-    "category": "Space",
-    "tags": ["space", "planets", "digital"],
+    "category": "デザイン",
+    "tags": [],
     "twitterUrl": "https://twitter.com/example6/status/1234567895"
   },
   {
     "id": "7",
     "imageUrl": "https://via.placeholder.com/800x900?text=Art+7",
     "prompt": "Vintage Japanese street with cherry blossoms, watercolor style.",
-    "category": "Japan",
-    "tags": ["japan", "cherry blossoms", "watercolor"],
+    "category": "アニメイラスト",
+    "tags": [],
     "twitterUrl": "https://twitter.com/example7/status/1234567896"
   }
 ]
