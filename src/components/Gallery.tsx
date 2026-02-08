@@ -1,7 +1,6 @@
 "use client";
 import React, { useMemo, useState, useCallback, useEffect, useRef } from "react";
 import prompts from "@/data/prompts.json";
-import Script from "next/script";
 
 interface PromptItem {
   id: string;
@@ -14,16 +13,26 @@ interface PromptItem {
 
 declare global {
   interface Window {
-    twttr?: any;
+    twttr?: {
+      widgets: {
+        load: (el?: HTMLElement) => void;
+        createTweet: (id: string, el: HTMLElement, options?: Record<string, unknown>) => Promise<HTMLElement>;
+      };
+    };
   }
 }
 
-function allCategories(prompts: PromptItem[]) {
+function allCategories(items: PromptItem[]) {
   const categories = new Set<string>();
-  prompts.forEach((item: PromptItem) => {
+  items.forEach((item: PromptItem) => {
     categories.add(item.category);
   });
   return Array.from(categories);
+}
+
+function extractTweetId(url: string): string | null {
+  const match = url.match(/status\/(\d+)/);
+  return match ? match[1] : null;
 }
 
 export default function Gallery() {
@@ -32,13 +41,22 @@ export default function Gallery() {
   const [showModal, setShowModal] = useState(false);
   const categories = useMemo(() => allCategories(prompts), []);
   const twitterEmbedRef = useRef<HTMLDivElement>(null);
-  const [widgetsLoaded, setWidgetsLoaded] = useState(false);
 
   const filtered = useMemo(() => {
     return prompts.filter((item) => {
       return !category || item.category === category;
     });
   }, [category]);
+
+  // Load Twitter widgets.js once
+  useEffect(() => {
+    if (document.getElementById("twitter-wjs")) return;
+    const script = document.createElement("script");
+    script.id = "twitter-wjs";
+    script.src = "https://platform.twitter.com/widgets.js";
+    script.async = true;
+    document.head.appendChild(script);
+  }, []);
 
   // Close modal with ESC key
   useEffect(() => {
@@ -50,16 +68,51 @@ export default function Gallery() {
     return () => window.removeEventListener("keydown", handleKey);
   }, [showModal]);
 
-  // Modal Copy to Clipboard
-  const handleCopy = useCallback((text:string) => {
+  // Render Twitter embed when modal opens
+  useEffect(() => {
+    if (!showModal || !modalItem || !twitterEmbedRef.current) return;
+
+    const container = twitterEmbedRef.current;
+    container.innerHTML = '<div style="color:#888;text-align:center;padding:1em;">X投稿を読み込み中...</div>';
+
+    const tweetId = extractTweetId(modalItem.twitterUrl);
+    if (!tweetId) {
+      container.innerHTML = '<div style="color:#888;text-align:center;padding:1em;">投稿IDを取得できませんでした</div>';
+      return;
+    }
+
+    function tryCreateTweet() {
+      if (window.twttr && window.twttr.widgets && window.twttr.widgets.createTweet) {
+        container.innerHTML = "";
+        window.twttr.widgets.createTweet(tweetId!, container, {
+          theme: "dark",
+          align: "center",
+          dnt: true,
+        }).then((el: HTMLElement | null) => {
+          if (!el) {
+            container.innerHTML = `<div style="text-align:center;padding:1em;"><a href="${modalItem!.twitterUrl}" target="_blank" rel="noopener noreferrer" style="color:#6fe3ff;">元のX投稿を見る →</a></div>`;
+          }
+        }).catch(() => {
+          container.innerHTML = `<div style="text-align:center;padding:1em;"><a href="${modalItem!.twitterUrl}" target="_blank" rel="noopener noreferrer" style="color:#6fe3ff;">元のX投稿を見る →</a></div>`;
+        });
+      } else {
+        setTimeout(tryCreateTweet, 300);
+      }
+    }
+
+    tryCreateTweet();
+  }, [showModal, modalItem]);
+
+  // Copy to clipboard
+  const handleCopy = useCallback((text: string) => {
     if (navigator.clipboard) {
       navigator.clipboard.writeText(text);
     } else {
-      const textarea = document.createElement('textarea');
+      const textarea = document.createElement("textarea");
       textarea.value = text;
       document.body.appendChild(textarea);
       textarea.select();
-      document.execCommand('copy');
+      document.execCommand("copy");
       document.body.removeChild(textarea);
     }
   }, []);
@@ -69,55 +122,12 @@ export default function Gallery() {
     if (e.target === e.currentTarget) setShowModal(false);
   };
 
-  // Twitter widgets.js loaded
-  useEffect(() => {
-    if (window.twttr && window.twttr.widgets) {
-      setWidgetsLoaded(true);
-    } else {
-      window.addEventListener("twttrLoaded", () => setWidgetsLoaded(true));
-    }
-  }, []);
-
-  // Render Twitter embed when modal opens
-  useEffect(() => {
-    if (showModal && modalItem && twitterEmbedRef.current) {
-      twitterEmbedRef.current.innerHTML = '';
-      const blockquote = document.createElement("blockquote");
-      blockquote.className = "twitter-tweet";
-      const a = document.createElement("a");
-      a.href = modalItem.twitterUrl;
-      blockquote.appendChild(a);
-      twitterEmbedRef.current.appendChild(blockquote);
-      // Wait for widgets.js
-      function renderWidget() {
-        if (window.twttr && window.twttr.widgets && window.twttr.widgets.load) {
-          window.twttr.widgets.load(twitterEmbedRef.current);
-        } else {
-          setTimeout(renderWidget, 120);
-        }
-      }
-      renderWidget();
-    }
-  }, [showModal, modalItem]);
-
   return (
     <>
-      {/* Twitter widgets.js */}
-      <Script
-        src="https://platform.twitter.com/widgets.js"
-        strategy="afterInteractive"
-        onLoad={() => {
-          if (typeof window !== "undefined" && window.twttr && window.twttr.widgets) {
-            setWidgetsLoaded(true);
-            // Maybe custom event for fallback listener
-            window.dispatchEvent(new Event("twttrLoaded"));
-          }
-        }}
-      />
       <div className="filter-bar">
-        <button onClick={() => setCategory(null)} className={category===null ? "tag selected" : "tag"}>すべて</button>
+        <button onClick={() => setCategory(null)} className={category === null ? "tag selected" : "tag"}>すべて</button>
         {categories.map((cat) => (
-          <button onClick={() => setCategory(cat)} key={cat} className={category===cat ? "tag selected" : "tag"}>{cat}</button>
+          <button onClick={() => setCategory(cat)} key={cat} className={category === cat ? "tag selected" : "tag"}>{cat}</button>
         ))}
       </div>
       <div className="gallery-grid">
@@ -127,28 +137,25 @@ export default function Gallery() {
           >
             <img src={item.imageUrl} alt="prompt artwork" className="card-image" loading="lazy" />
             <div className="card-details">
-              <div style={{fontWeight:700,marginBottom:4}}>{item.category}</div>
-              <div>{item.prompt}</div>
-              <div className="card-footer">
-                <a href={item.twitterUrl} target="_blank" rel="noopener noreferrer">元X（Twitter）投稿へ</a>
-              </div>
+              <div style={{ fontWeight: 700, marginBottom: 4 }}>{item.category}</div>
+              <div style={{ fontSize: "0.9em" }}>{item.prompt.length > 120 ? item.prompt.slice(0, 120) + "..." : item.prompt}</div>
             </div>
           </div>
         ))}
       </div>
 
-      {/* Modal Overlay */}
+      {/* Modal */}
       {showModal && modalItem && (
-        <div className="modal-overlay open" onClick={overlayClick}>
+        <div className="modal-overlay" onClick={overlayClick}>
           <div className="modal-content">
             <button className="modal-close-btn" aria-label="Close" onClick={() => setShowModal(false)}>×</button>
             <div className="modal-category">{modalItem.category}</div>
-            <div className="modal-prompt" style={{position:'relative'}}>
-              <button className="copy-btn" onClick={()=>handleCopy(modalItem.prompt)}>コピー</button>
+            <div className="modal-prompt">
+              <button className="copy-btn" onClick={() => handleCopy(modalItem.prompt)}>コピー</button>
               {modalItem.prompt}
             </div>
-            {/* X埋め込みツイート表示 */}
-            <div ref={twitterEmbedRef} style={{margin:'14px 0', minHeight:140}}/>
+            {/* X埋め込みツイート */}
+            <div ref={twitterEmbedRef} style={{ margin: "14px 0", minHeight: 140 }} />
           </div>
         </div>
       )}
